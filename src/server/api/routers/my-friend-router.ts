@@ -59,6 +59,29 @@ export const myFriendRouter = router({
             'friends.fullName',
             'friends.phoneNumber',
             'totalFriendCount',
+            conn
+              .selectFrom('friendships as f1')
+              .innerJoin(
+                'friendships as f2',
+                'f1.friendUserId',
+                'f2.friendUserId'
+              )
+              .where('f1.userId', '=', ctx.session.userId)
+              .where('f2.userId', '=', input.friendUserId)
+              .where(
+                'f1.status',
+                '=',
+                FriendshipStatusSchema.Values['accepted']
+              )
+              .where(
+                'f2.status',
+                '=',
+                FriendshipStatusSchema.Values['accepted']
+              )
+              .select((eb) =>
+                eb.fn.count('f1.friendUserId').as('mutualFriendCount')
+              )
+              .as('mutualFriendCount'),
           ])
           .executeTakeFirstOrThrow(() => new TRPCError({ code: 'NOT_FOUND' }))
           .then(
